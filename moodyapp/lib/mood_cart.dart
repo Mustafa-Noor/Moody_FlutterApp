@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 class MoodCard extends StatelessWidget {
-  final String emoji;
+  final Color color;
   final String mood;
-  final String time;
-  final List<String> activities;
+  final String time; // Represents the date
   final String? note;
+  final VoidCallback onEditPressed; // Callback for edit/delete button
 
   const MoodCard({
     super.key,
-    required this.emoji,
+    required this.color,
     required this.mood,
     required this.time,
-    required this.activities,
     this.note,
+    required this.onEditPressed,
   });
 
   @override
@@ -29,30 +29,34 @@ class MoodCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(emoji, style: const TextStyle(fontSize: 30)),
+                CircleAvatar(backgroundColor: color, radius: 15),
                 const SizedBox(width: 10),
                 Text(
                   mood,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
                 Text(time, style: TextStyle(color: Colors.white70)),
               ],
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              children: activities.map((activity) {
-                return Chip(
-                  backgroundColor: Colors.grey[700],
-                  label: Text(activity, style: const TextStyle(color: Colors.white)),
-                );
-              }).toList(),
-            ),
             if (note != null) ...[
-              const SizedBox(height: 10),
-              Text("Note: $note", style: const TextStyle(color: Colors.white70)),
+              Text(
+                "Note: $note",
+                style: const TextStyle(color: Colors.white70),
+              ),
             ],
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: onEditPressed,
+                icon: const Icon(Icons.edit, color: Colors.grey),
+              ),
+            ),
           ],
         ),
       ),

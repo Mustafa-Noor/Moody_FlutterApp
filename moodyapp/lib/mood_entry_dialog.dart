@@ -11,6 +11,16 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
   String selectedMood = "Alright"; // Default mood
+  Color selectedColor = Colors.grey; // Default color
+
+  final List<Map<String, dynamic>> moodOptions = [
+    {"color": Colors.red, "mood": "Angry"},
+    {"color": Colors.orange, "mood": "Excited"},
+    {"color": Colors.yellow, "mood": "Happy"},
+    {"color": Colors.green, "mood": "Calm"},
+    {"color": Colors.blue, "mood": "Sad"},
+    {"color": Colors.purple, "mood": "Tired"},
+  ];
 
   void _pickDate() async {
     DateTime? newDate = await showDatePicker(
@@ -58,29 +68,46 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ["😃", "😊", "😐", "😞", "😢"].map((emoji) {
-              return GestureDetector(
-                onTap: () => setState(() => selectedMood = emoji),
-                child: CircleAvatar(
-                  backgroundColor: selectedMood == emoji ? Colors.blue : Colors.grey,
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                ),
-              );
-            }).toList(),
+          Wrap(
+            spacing: 10,
+            children:
+                moodOptions.map((option) {
+                  return GestureDetector(
+                    onTap:
+                        () => setState(() {
+                          selectedMood = option["mood"];
+                          selectedColor = option["color"];
+                        }),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: option["color"],
+                          radius: 20,
+                          child:
+                              selectedMood == option["mood"]
+                                  ? const Icon(Icons.check, color: Colors.white)
+                                  : null,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          option["mood"],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white, // Label text in white
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 15),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add),
-            label: const Text("Add Activities"),
-          ),
-          const SizedBox(height: 10),
           TextField(
             decoration: InputDecoration(
               hintText: "Add a note",
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(height: 15),
@@ -92,7 +119,9 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
                 child: const Text("Cancel"),
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Save logic here
+                },
                 child: const Text("Save"),
               ),
             ],

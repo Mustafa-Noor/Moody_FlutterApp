@@ -15,39 +15,104 @@ class MoodLogScreen extends StatelessWidget {
     );
   }
 
+  void _showActionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Choose an Action"),
+          content: const Text("Would you like to edit or delete this entry?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Add delete logic here
+                Navigator.pop(context);
+              },
+              child: const Text("Delete"),
+            ),
+            TextButton(
+              onPressed: () {
+                // Add edit logic here
+                Navigator.pop(context);
+              },
+              child: const Text("Edit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Mood Log")),
-      body: ListView(
-        padding: const EdgeInsets.all(10),
-        children: const [
-          MoodCard(
-            emoji: "😊",
-            mood: "Positive",
-            time: "6:55 AM",
-            activities: ["Exercise", "Good Sleep"],
-            note: "Woke up feeling energetic 💪",
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(10),
+              children: [
+                MoodCard(
+                  color: Colors.yellow,
+                  mood: "Positive",
+                  time: "2025-03-28", // Date
+                  note: "Woke up feeling energetic 💪",
+                  onEditPressed: () {
+                    _showActionDialog(context);
+                  },
+                ),
+                MoodCard(
+                  color: Colors.orange,
+                  mood: "Great",
+                  time: "2025-03-27", // Date
+                  note: "Had a wonderful evening with friends.",
+                  onEditPressed: () {
+                    _showActionDialog(context);
+                  },
+                ),
+                MoodCard(
+                  color: Colors.grey,
+                  mood: "Alright",
+                  time: "2025-03-26", // Date
+                  note: "A regular day, nothing special.",
+                  onEditPressed: () {
+                    _showActionDialog(context);
+                  },
+                ),
+                MoodCard(
+                  color: Colors.blue,
+                  mood: "Bad",
+                  time: "2025-03-25", // Date
+                  note: "Feeling down due to lack of sleep.",
+                  onEditPressed: () {
+                    _showActionDialog(context);
+                  },
+                ),
+              ],
+            ),
           ),
-          MoodCard(
-            emoji: "😃",
-            mood: "Great",
-            time: "8:36 PM",
-            activities: ["Date", "Movies & TV"],
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to Mood Log Screen (current screen)
+                },
+                icon: const Icon(Icons.list),
+                label: const Text("Mood Log"),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to Chart Screen
+                },
+                icon: const Icon(Icons.bar_chart),
+                label: const Text("Chart"),
+              ),
+            ],
           ),
-          MoodCard(
-            emoji: "😐",
-            mood: "Alright",
-            time: "11:33 AM",
-            activities: ["Sleep Early"],
-          ),
-          MoodCard(
-            emoji: "😞",
-            mood: "Bad",
-            time: "10:49 AM",
-            activities: ["Bad Sleep", "Party"],
-            note: "Don't drink too much next time...",
-          ),
+          const SizedBox(height: 10),
         ],
       ),
       floatingActionButton: FloatingActionButton(
