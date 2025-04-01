@@ -78,7 +78,6 @@ class LocalDatabase {
 
   Future<void> updateMood(
     int id,
-    String date,
     String color,
     String mood,
     String note,
@@ -86,7 +85,7 @@ class LocalDatabase {
     final db = await database;
     await db.update(
       'moods',
-      {'date': date, 'color': color, 'mood': mood, 'note': note},
+      {'color': color, 'mood': mood, 'note': note},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -105,5 +104,22 @@ class LocalDatabase {
     final path = join(dbPath, 'Moody.db');
     await deleteDatabase(path); // Deletes the old database
     print("Old database deleted");
+  }
+
+  Future<bool> doesDateExist(String dateTimeString) async {
+    final db = await database;
+
+    // Extract just the date portion (YYYY-MM-DD)
+    final dateOnly = dateTimeString.split(' ')[0];
+
+    // Query using LIKE to match just the date portion
+    final result = await db.query(
+      'moods',
+      where: 'date LIKE ?',
+      whereArgs: ['$dateOnly%'], // Match any entries starting with this date
+      limit: 1,
+    );
+
+    return result.isNotEmpty;
   }
 }

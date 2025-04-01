@@ -26,17 +26,41 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
     });
   }
 
-  void _openMoodDialog() {
+  void _openMoodDialog({Map<String, dynamic>? existingMood}) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => MoodEntryDialog(),
-    ).then((_) => _loadMoods()); // Reload moods after closing dialog
+      isScrollControlled: true,
+      builder:
+          (context) => MoodEntryDialog(
+            existingMood: existingMood,
+            onSave: (updatedMood) async {
+              if (existingMood != null) {
+                // Update the mood in the database
+                await LocalDatabase().updateMood(
+                  existingMood['id'],
+                  updatedMood['color'],
+                  updatedMood['mood'],
+                  updatedMood['note'],
+                );
+              } else {
+                // Add a new mood
+                await LocalDatabase().addMood(
+                  updatedMood['date'],
+                  updatedMood['color'],
+                  updatedMood['mood'],
+                  updatedMood['note'],
+                );
+              }
+              _loadMoods(); // Refresh the mood list
+            },
+          ),
+    );
   }
 
-  void _showActionDialog(BuildContext context, int id) {
+  void _showActionDialog(BuildContext context, Map<String, dynamic> mood) {
     showDialog(
       context: context,
       builder: (context) {
@@ -46,7 +70,7 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await LocalDatabase().deleteMood(id);
+                await LocalDatabase().deleteMood(mood['id']);
                 Navigator.pop(context);
                 _loadMoods(); // Refresh after deletion
               },
@@ -54,8 +78,8 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Add edit logic here
                 Navigator.pop(context);
+                _openMoodDialog(existingMood: mood); // Open dialog for editing
               },
               child: const Text("Edit"),
             ),
@@ -87,21 +111,22 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
             itemCount: moods.length,
             itemBuilder: (context, index) {
               final mood = moods[index];
+              // Extract just the date portion (YYYY-MM-DD)
+              final dateString = mood['date'].toString().split(' ')[0];
+
               return MoodCard(
-                color: Color(
-                  int.parse(mood['color'], radix: 16),
-                ), // Fix: Convert hex string to Color
+                color: Color(int.parse(mood['color'], radix: 16)),
                 mood: mood['mood'],
-                time: mood['date'],
+                time: dateString, // Now shows only the date
                 note: mood['note'],
-                onEditPressed: () => _showActionDialog(context, mood['id']),
+                onEditPressed: () => _showActionDialog(context, mood),
               );
             },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openMoodDialog,
+        onPressed: () => _openMoodDialog(),
         child: const Icon(Icons.add),
       ),
     );

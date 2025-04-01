@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'LocalDb.dart';
 
 class MoodEntryDialog extends StatefulWidget {
-  const MoodEntryDialog({super.key});
+  final Map<String, dynamic>? existingMood; // Existing mood for editing
+  final Function(Map<String, dynamic>) onSave; // Callback to save the mood
+
+  const MoodEntryDialog({super.key, this.existingMood, required this.onSave});
 
   @override
   _MoodEntryDialogState createState() => _MoodEntryDialogState();
 }
 
 class _MoodEntryDialogState extends State<MoodEntryDialog> {
-  DateTime selectedDate = DateTime.now();
-  String selectedMood = ''; // Default mood
-  Color selectedColor = Colors.grey; // Default color
+  late DateTime selectedDate;
+  late String selectedMood;
+  late Color selectedColor;
   final TextEditingController noteController = TextEditingController();
 
   final List<Map<String, dynamic>> moodOptions = [
@@ -23,6 +26,25 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
     {"color": Colors.purple, "mood": "Tired"},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingMood != null) {
+      // Pre-fill fields for editing
+      selectedDate = DateTime.parse(widget.existingMood!['date']);
+      selectedMood = widget.existingMood!['mood'];
+      selectedColor = Color(
+        int.parse(widget.existingMood!['color'], radix: 16),
+      );
+      noteController.text = widget.existingMood!['note'];
+    } else {
+      // Default values for adding a new mood
+      selectedDate = DateTime.now();
+      selectedMood = '';
+      selectedColor = Colors.grey;
+    }
+  }
+
   void _pickDate() async {
     DateTime? newDate = await showDatePicker(
       context: context,
@@ -31,11 +53,6 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
       lastDate: DateTime(2100),
     );
     if (newDate != null) setState(() => selectedDate = newDate);
-  }
-
-  void checkMoods() async {
-    final moods = await LocalDatabase().getMoods();
-    print("Current moods in database: $moods");
   }
 
   void _showTopSnackBar(String message) {
@@ -53,114 +70,98 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
     );
   }
 
-  void validateInputs() {
+  Future<void> _saveMood() async {
     if (selectedMood.isEmpty) {
       _showTopSnackBar("Please select a mood!");
     } else if (noteController.text.isEmpty) {
       _showTopSnackBar("Please add a note!");
+    } else if (await LocalDatabase().doesDateExist(selectedDate.toString())) {
+      _showTopSnackBar("Mood for this date already exists!");
+    } else if (selectedDate.isAfter(DateTime.now())) {
+      _showTopSnackBar("Date cannot be in the future!");
     } else {
-      String colorHex = selectedColor.value.toRadixString(16).padLeft(8, '0');
-      LocalDatabase().addMood(
-        selectedDate.toString(),
-        colorHex,
-        selectedMood, // Adding mood separately
-        noteController.text, // Keeping note separate
-      );
-      checkMoods(); // Check moods after adding
-      _showTopSnackBar("Mood saved successfully!");
-      Navigator.pop(context);
+      widget.onSave({
+        'date': selectedDate.toString(),
+        'color': selectedColor.value.toRadixString(16).padLeft(8, '0'),
+        'mood': selectedMood,
+        'note': noteController.text,
+      });
+      Navigator.pop(context); // Close the dialog
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: mediaQuery.viewInsets.bottom + 20, // Adjust for keyboard
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "How are you feeling?",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "How are you feeling?",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 15),
+          // Show date picker only if adding a new mood
+          if (widget.existingMood == null)
             TextButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.calendar_today),
               label: Text("${selectedDate.toLocal()}".split(' ')[0]),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              children:
-                  moodOptions.map((option) {
-                    return GestureDetector(
-                      onTap:
-                          () => setState(() {
-                            selectedMood = option["mood"];
-                            selectedColor = option["color"];
-                          }),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: option["color"],
-                            radius: 20,
-                            child:
-                                selectedMood == option["mood"]
-                                    ? const Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                    )
-                                    : null,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            option["mood"],
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: noteController,
-              decoration: InputDecoration(
-                hintText: "Add a note",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            children:
+                moodOptions.map((option) {
+                  return GestureDetector(
+                    onTap:
+                        () => setState(() {
+                          selectedMood = option["mood"];
+                          selectedColor = option["color"];
+                        }),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: option["color"],
+                          radius: 20,
+                          child:
+                              selectedMood == option["mood"]
+                                  ? const Icon(Icons.check, color: Colors.white)
+                                  : null,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          option["mood"],
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: noteController,
+            decoration: InputDecoration(
+              hintText: "Add a note",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: validateInputs, // Call validateInputs method
-
-                  child: const Text("Save"),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(onPressed: _saveMood, child: const Text("Save")),
+            ],
+          ),
+        ],
       ),
     );
   }
