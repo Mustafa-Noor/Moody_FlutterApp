@@ -122,4 +122,18 @@ class LocalDatabase {
 
     return result.isNotEmpty;
   }
+
+  Future<List<Map<String, dynamic>>> getLast7DaysMoods() async {
+    final db = await database;
+    return await db.rawQuery(
+      "SELECT * FROM moods WHERE date >= DATE('now', '-7 days')",
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getLast30DaysMoods() async {
+    final db = await database;
+    return await db.rawQuery(
+      "SELECT * FROM moods WHERE date >= DATE('now', '-30 days')",
+    );
+  }
 }
