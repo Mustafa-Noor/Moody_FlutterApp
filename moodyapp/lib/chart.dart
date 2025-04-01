@@ -91,11 +91,13 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
       appBar: AppBar(
         title: const Text("Mood Count"),
         backgroundColor: Colors.black87,
+        toolbarHeight: 70,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            const SizedBox(height: 40), // Add margin from the top
             // Dropdown for selecting Weekly or Monthly view
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
