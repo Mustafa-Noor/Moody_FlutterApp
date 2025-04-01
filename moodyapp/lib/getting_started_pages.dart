@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:moodyapp/data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'main.dart'; // Import the HomeScreen class
 
 class GettingStarted extends StatelessWidget {
   const GettingStarted({super.key});
@@ -25,49 +27,64 @@ class GettingStarted extends StatelessWidget {
                 Align(
                   alignment: Alignment.topRight,
                   child: Padding(
-                    padding: const EdgeInsets.all(0.0), // Add some padding for better spacing
+                    padding: const EdgeInsets.all(
+                      0.0,
+                    ), // Add some padding for better spacing
                     child: TextButton(
-                      onPressed: () {
-                        // Add functionality for skipping
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool(
+                          'hasSeenOnboarding',
+                          true,
+                        ); // Set the flag to true
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
+                          ), // Navigate to HomeScreen
+                        );
                       },
                       child: Text(
                         'SKIP',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.white, // Ensuring visibility
                           fontWeight: FontWeight.bold,
-                          fontSize: 20
+                          fontSize: 20,
                         ),
                       ),
                     ),
                   ),
                 ),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(150), // Large value to make it fully circular
+                  borderRadius: BorderRadius.circular(
+                    150,
+                  ), // Large value to make it fully circular
                   child: Image.asset(
                     page.imagePath,
                     height: 300, // Adjust size as needed
-                    width: 300,  // Ensures it's a perfect circle
-                    fit: BoxFit.cover, // Ensures the image fills the circular space
+                    width: 300, // Ensures it's a perfect circle
+                    fit:
+                        BoxFit
+                            .cover, // Ensures the image fills the circular space
                   ),
                 ),
                 Column(
-
-                    children: [
-                      const SizedBox(height: 5),
-                      Text(
-                        page.title,
-                        style: Theme.of(context).textTheme.displayLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        page.description,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 30), // Space before bottom edge
-                    ],
-                  ),
+                  children: [
+                    const SizedBox(height: 5),
+                    Text(
+                      page.title,
+                      style: Theme.of(context).textTheme.displayLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      page.description,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 30), // Space before bottom edge
+                  ],
+                ),
                 SizedBox(
                   height: 10, // Set a fixed height for visibility
                   width: double.infinity,
@@ -88,7 +105,6 @@ class GettingStarted extends StatelessWidget {
                     },
                   ),
                 ),
-
               ],
             ),
           );
