@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import 'mood_cart.dart';
 import 'mood_entry_dialog.dart';
+import 'LocalDb.dart';
 
-class MoodLogScreen extends StatelessWidget {
+class MoodLogScreen extends StatefulWidget {
   const MoodLogScreen({super.key});
 
-  void _openMoodDialog(BuildContext context) {
+  @override
+  _MoodLogScreenState createState() => _MoodLogScreenState();
+}
+
+class _MoodLogScreenState extends State<MoodLogScreen> {
+  late Future<List<Map<String, dynamic>>> _moodsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMoods();
+  }
+
+  void _loadMoods() {
+    setState(() {
+      _moodsFuture = LocalDatabase().getMoods(); // Fetch moods from DB
+    });
+  }
+
+  void _openMoodDialog() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => const MoodEntryDialog(),
-    );
+      builder: (context) => MoodEntryDialog(),
+    ).then((_) => _loadMoods()); // Reload moods after closing dialog
   }
 
-  void _showActionDialog(BuildContext context) {
+  void _showActionDialog(BuildContext context, int id) {
     showDialog(
       context: context,
       builder: (context) {
@@ -24,9 +45,10 @@ class MoodLogScreen extends StatelessWidget {
           content: const Text("Would you like to edit or delete this entry?"),
           actions: [
             TextButton(
-              onPressed: () {
-                // Add delete logic here
+              onPressed: () async {
+                await LocalDatabase().deleteMood(id);
                 Navigator.pop(context);
+                _loadMoods(); // Refresh after deletion
               },
               child: const Text("Delete"),
             ),
@@ -47,76 +69,39 @@ class MoodLogScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Mood Log")),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(10),
-              children: [
-                MoodCard(
-                  color: Colors.yellow,
-                  mood: "Positive",
-                  time: "2025-03-28", // Date
-                  note: "Woke up feeling energetic 💪",
-                  onEditPressed: () {
-                    _showActionDialog(context);
-                  },
-                ),
-                MoodCard(
-                  color: Colors.orange,
-                  mood: "Great",
-                  time: "2025-03-27", // Date
-                  note: "Had a wonderful evening with friends.",
-                  onEditPressed: () {
-                    _showActionDialog(context);
-                  },
-                ),
-                MoodCard(
-                  color: Colors.grey,
-                  mood: "Alright",
-                  time: "2025-03-26", // Date
-                  note: "A regular day, nothing special.",
-                  onEditPressed: () {
-                    _showActionDialog(context);
-                  },
-                ),
-                MoodCard(
-                  color: Colors.blue,
-                  mood: "Bad",
-                  time: "2025-03-25", // Date
-                  note: "Feeling down due to lack of sleep.",
-                  onEditPressed: () {
-                    _showActionDialog(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Navigate to Mood Log Screen (current screen)
-                },
-                icon: const Icon(Icons.list),
-                label: const Text("Mood Log"),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Navigate to Chart Screen
-                },
-                icon: const Icon(Icons.bar_chart),
-                label: const Text("Chart"),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-        ],
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _moodsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text("Error loading moods"));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("No mood entries yet"));
+          }
+
+          final moods = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(10),
+            itemCount: moods.length,
+            itemBuilder: (context, index) {
+              final mood = moods[index];
+              return MoodCard(
+                color: Color(
+                  int.parse(mood['color'], radix: 16),
+                ), // Fix: Convert hex string to Color
+                mood: mood['mood'],
+                time: mood['date'],
+                note: mood['note'],
+                onEditPressed: () => _showActionDialog(context, mood['id']),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openMoodDialog(context),
+        onPressed: _openMoodDialog,
         child: const Icon(Icons.add),
       ),
     );
