@@ -158,7 +158,36 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Cancel"),
               ),
-              ElevatedButton(onPressed: _saveMood, child: const Text("Save")),
+              if (widget.existingMood != null)
+                TextButton(
+                  onPressed: () async {
+                    // Call updateMood from LocalDatabase
+                    await LocalDatabase().updateMood(
+                      widget
+                          .existingMood!['id'], // Pass the ID of the existing mood
+                      selectedColor.value
+                          .toRadixString(16)
+                          .padLeft(8, '0'), // Updated color
+                      selectedMood, // Updated mood
+                      noteController.text, // Updated note
+                    );
+
+                    // Notify parent widget and close the dialog
+                    widget.onSave({
+                      'id': widget.existingMood!['id'],
+                      'date': selectedDate.toString(),
+                      'color': selectedColor.value
+                          .toRadixString(16)
+                          .padLeft(8, '0'),
+                      'mood': selectedMood,
+                      'note': noteController.text,
+                    });
+                    Navigator.pop(context); // Close the dialog
+                  },
+                  child: const Text("Update"),
+                )
+              else
+                ElevatedButton(onPressed: _saveMood, child: const Text("Save")),
             ],
           ),
         ],
