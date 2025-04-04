@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:moodyapp/data.dart';
+import 'package:moodyapp/BL/starting_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main.dart'; // Import the HomeScreen class
+import '../main.dart'; // Import the HomeScreen class
 
 class GettingStarted extends StatelessWidget {
   const GettingStarted({super.key});
