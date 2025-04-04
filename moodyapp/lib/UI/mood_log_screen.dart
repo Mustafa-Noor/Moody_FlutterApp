@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import '../BL/mood_card.dart';
 import 'mood_entry_dialog.dart';
 import '../DL/MoodDB.dart';
 
 class MoodLogScreen extends StatefulWidget {
-  const MoodLogScreen({super.key});
+  final int userIndex; // User index to associate moods with a specific user
+  const MoodLogScreen({Key? key, required this.userIndex}) : super(key: key);
 
   @override
   _MoodLogScreenState createState() => _MoodLogScreenState();
@@ -22,7 +22,9 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
 
   void _loadMoods() {
     setState(() {
-      _moodsFuture = LocalDatabase().getMoods(); // Fetch moods from DB
+      _moodsFuture = LocalDatabase().getMoods(
+        widget.userIndex,
+      ); // Fetch moods for the user
     });
   }
 
@@ -35,11 +37,13 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
       isScrollControlled: true,
       builder:
           (context) => MoodEntryDialog(
+            userIndex: widget.userIndex, // Pass userIndex to the dialog
             existingMood: existingMood,
             onSave: (updatedMood) async {
               if (existingMood != null) {
                 // Update the mood in the database
                 await LocalDatabase().updateMood(
+                  widget.userIndex,
                   existingMood['id'],
                   updatedMood['color'],
                   updatedMood['mood'],
@@ -48,6 +52,7 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
               } else {
                 // Add a new mood
                 await LocalDatabase().addMood(
+                  widget.userIndex,
                   updatedMood['date'],
                   updatedMood['color'],
                   updatedMood['mood'],
@@ -70,7 +75,7 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await LocalDatabase().deleteMood(mood['id']);
+                await LocalDatabase().deleteMood(widget.userIndex, mood['id']);
                 Navigator.pop(context);
                 _loadMoods(); // Refresh after deletion
               },

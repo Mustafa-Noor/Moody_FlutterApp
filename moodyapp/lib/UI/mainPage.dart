@@ -25,10 +25,16 @@ class _MainpageState extends State<Mainpage> {
   }
 
   // List of screens for navigation
-  final List<Widget> _screens = [
-    MoodLogScreen(), // Mood Log Screen
-    MoodBarChartPage(), // Mood Chart Screen
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      MoodLogScreen(userIndex: widget.userIndex), // Mood Log Screen
+      MoodBarChartPage(userIndex: widget.userIndex), // Mood Chart Screen
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {

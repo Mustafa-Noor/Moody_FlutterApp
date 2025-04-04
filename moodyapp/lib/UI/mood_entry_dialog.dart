@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import '../DL/MoodDB.dart';
 
 class MoodEntryDialog extends StatefulWidget {
+  final int userIndex; // User index to associate the mood with a specific user
   final Map<String, dynamic>? existingMood; // Existing mood for editing
   final Function(Map<String, dynamic>) onSave; // Callback to save the mood
 
-  const MoodEntryDialog({super.key, this.existingMood, required this.onSave});
+  const MoodEntryDialog({
+    super.key,
+    required this.userIndex,
+    this.existingMood,
+    required this.onSave,
+  });
 
   @override
   _MoodEntryDialogState createState() => _MoodEntryDialogState();
@@ -71,16 +77,22 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
   }
 
   Future<void> _saveMood() async {
+    final db = LocalDatabase();
+
     if (selectedMood.isEmpty) {
       _showTopSnackBar("Please select a mood!");
     } else if (noteController.text.isEmpty) {
       _showTopSnackBar("Please add a note!");
-    } else if (await LocalDatabase().doesDateExist(selectedDate.toString())) {
+    } else if (await db.doesDateExist(
+      widget.userIndex,
+      selectedDate.toString(),
+    )) {
       _showTopSnackBar("Mood for this date already exists!");
     } else if (selectedDate.isAfter(DateTime.now())) {
       _showTopSnackBar("Date cannot be in the future!");
     } else {
       widget.onSave({
+        'userIndex': widget.userIndex,
         'date': selectedDate.toString(),
         'color': selectedColor.value.toRadixString(16).padLeft(8, '0'),
         'mood': selectedMood,
@@ -88,6 +100,29 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
       });
       Navigator.pop(context); // Close the dialog
     }
+  }
+
+  Future<void> _updateMood() async {
+    final db = LocalDatabase();
+
+    await db.updateMood(
+      widget.userIndex,
+      widget.existingMood!['id'], // Pass the ID of the existing mood
+      selectedColor.value.toRadixString(16).padLeft(8, '0'), // Updated color
+      selectedMood, // Updated mood
+      noteController.text, // Updated note
+    );
+
+    // Notify parent widget and close the dialog
+    widget.onSave({
+      'id': widget.existingMood!['id'],
+      'userIndex': widget.userIndex,
+      'date': selectedDate.toString(),
+      'color': selectedColor.value.toRadixString(16).padLeft(8, '0'),
+      'mood': selectedMood,
+      'note': noteController.text,
+    });
+    Navigator.pop(context); // Close the dialog
   }
 
   @override
@@ -159,33 +194,7 @@ class _MoodEntryDialogState extends State<MoodEntryDialog> {
                 child: const Text("Cancel"),
               ),
               if (widget.existingMood != null)
-                TextButton(
-                  onPressed: () async {
-                    // Call updateMood from LocalDatabase
-                    await LocalDatabase().updateMood(
-                      widget
-                          .existingMood!['id'], // Pass the ID of the existing mood
-                      selectedColor.value
-                          .toRadixString(16)
-                          .padLeft(8, '0'), // Updated color
-                      selectedMood, // Updated mood
-                      noteController.text, // Updated note
-                    );
-
-                    // Notify parent widget and close the dialog
-                    widget.onSave({
-                      'id': widget.existingMood!['id'],
-                      'date': selectedDate.toString(),
-                      'color': selectedColor.value
-                          .toRadixString(16)
-                          .padLeft(8, '0'),
-                      'mood': selectedMood,
-                      'note': noteController.text,
-                    });
-                    Navigator.pop(context); // Close the dialog
-                  },
-                  child: const Text("Update"),
-                )
+                TextButton(onPressed: _updateMood, child: const Text("Update"))
               else
                 ElevatedButton(onPressed: _saveMood, child: const Text("Save")),
             ],

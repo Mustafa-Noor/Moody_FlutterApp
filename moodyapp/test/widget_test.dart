@@ -1,43 +1,31 @@
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:moodyapp/main.dart';
-import 'package:moodyapp/UI/mainPage.dart';
-import 'package:moodyapp/UI/welcome.dart';
 
 void main() {
-  setUp(() async {
-    // Mock SharedPreferences for the test
-    SharedPreferences.setMockInitialValues({
-      'isLoggedIn': false, // Default value for isLoggedIn
-      'userIndex': -1, // Default value for userIndex
-    });
-  });
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    // await tester.pumpWidget(MyApp(hasSeenOnboarding: false));
+    await tester.pumpWidget(MaterialApp(home: MyApp()));
 
-  testWidgets('App starts with Welcome page when not logged in', (
-    WidgetTester tester,
-  ) async {
-    // Build the app and trigger a frame
-    await tester.pumpWidget(const MyApp(isLoggedIn: false, userIndex: -1));
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
 
-    // Verify that the Welcome page is displayed
-    expect(find.byType(Welcome), findsOneWidget);
-  });
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
 
-  testWidgets('App starts with Mainpage when logged in', (
-    WidgetTester tester,
-  ) async {
-    // Mock SharedPreferences for logged-in state
-    SharedPreferences.setMockInitialValues({
-      'isLoggedIn': true,
-      'userIndex': 1,
-    });
-
-    // Build the app and trigger a frame
-    await tester.pumpWidget(const MyApp(isLoggedIn: true, userIndex: 1));
-
-    // Verify that the Mainpage is displayed
-    expect(find.byType(Mainpage), findsOneWidget);
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
   });
 }

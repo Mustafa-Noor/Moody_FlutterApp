@@ -3,6 +3,10 @@ import 'package:fl_chart/fl_chart.dart';
 import '../DL/MoodDB.dart';
 
 class MoodBarChartPage extends StatefulWidget {
+  final int userIndex;
+
+  const MoodBarChartPage({Key? key, required this.userIndex}) : super(key: key);
+
   @override
   _MoodBarChartPageState createState() => _MoodBarChartPageState();
 }
@@ -40,9 +44,9 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
 
     // Fetch data based on the selected view
     if (_selectedView == "Weekly") {
-      moods = await _db.getLast7DaysMoods();
+      moods = await _db.getLast7DaysMoods(widget.userIndex);
     } else if (_selectedView == "Monthly") {
-      moods = await _db.getLast30DaysMoods();
+      moods = await _db.getLast30DaysMoods(widget.userIndex);
     }
 
     List<BarChartGroupData> barGroups = [];
