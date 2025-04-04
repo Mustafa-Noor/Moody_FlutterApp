@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:moodyapp/UI/mainPage.dart';
 import 'signUp_page.dart';
 import 'welcome.dart';
-import '../DL/UserDB.dart'; // Import the UserDatabase class
+import '../DL/UserDB.dart';
+import 'mainPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+// Import the UserDatabase class
 
 class LoginPage extends StatefulWidget {
   @override
@@ -38,6 +41,7 @@ class _LoginPageState extends State<LoginPage> {
       if (isValid) {
         await _showMessage('Success', 'Welcome to MOODY!');
         int? userIndex = await UserDatabase.instance.getUserIndex(username);
+        await saveLoginState(true, userIndex!);
         // Navigate to the welcome page or home page
         Navigator.pushReplacement(
           context,
@@ -69,6 +73,12 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
     );
+  }
+
+  Future<void> saveLoginState(bool isLoggedIn, int userIndex) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', isLoggedIn);
+    await prefs.setInt('userIndex', userIndex);
   }
 
   @override

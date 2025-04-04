@@ -4,6 +4,7 @@ import 'mood_log_screen.dart';
 import 'chart.dart'; // Import the MoodBarChartPage
 import 'signIn_page.dart';
 import '../DL/UserDB.dart'; // Import the UserDatabase class
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Mainpage extends StatefulWidget {
   final int userIndex; // Index of the logged-in user
@@ -42,13 +43,20 @@ class _MainpageState extends State<Mainpage> {
     });
   }
 
-  void _logOut() {
+  Future<void> _logOut() async {
+    await clearLoginState();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => Welcome(),
       ), // Navigate back to LoginPage
     );
+  }
+
+  Future<void> clearLoginState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('userIndex');
   }
 
   void _changePassword() {
