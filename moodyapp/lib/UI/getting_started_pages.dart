@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:moodyapp/BL/starting_page.dart';
+import 'package:moodyapp/UI/welcome.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart'; // Import the HomeScreen class
 
@@ -40,7 +41,7 @@ class GettingStarted extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
+                            builder: (context) => const Welcome(),
                           ), // Navigate to HomeScreen
                         );
                       },

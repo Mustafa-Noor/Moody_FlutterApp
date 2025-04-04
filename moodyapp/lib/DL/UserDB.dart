@@ -173,4 +173,63 @@ class UserDatabase {
     // Return true if a matching user is found, otherwise false
     return result.isNotEmpty;
   }
+
+  // Add this method to the UserDatabase class
+  Future<int?> getUserIndex(String username) async {
+    final db = await database;
+
+    // Query the database for the user with the given username
+    final result = await db.query(
+      'users',
+      columns: ['id'], // Only retrieve the 'id' column
+      where: 'username = ?',
+      whereArgs: [username],
+      limit: 1, // Limit the result to one user
+    );
+
+    // If a matching user is found, return their ID, otherwise return null
+    if (result.isNotEmpty) {
+      return result.first['id'] as int;
+    } else {
+      return null;
+    }
+  }
+
+  // Add this method to the UserDatabase class
+  Future<String?> getUsernameFromIndex(int userIndex) async {
+    final db = await database;
+
+    // Query the database for the user with the given ID
+    final result = await db.query(
+      'users',
+      columns: ['username'], // Only retrieve the 'username' column
+      where: 'id = ?',
+      whereArgs: [userIndex],
+      limit: 1, // Limit the result to one user
+    );
+
+    // If a matching user is found, return their username, otherwise return null
+    if (result.isNotEmpty) {
+      return result.first['username'] as String;
+    } else {
+      return null;
+    }
+  }
+
+  // Add this method to the UserDatabase class
+  Future<void> changePasswordById(int userId, String newPassword) async {
+    final db = await database;
+
+    // Update the password for the user with the given ID
+    final result = await db.update(
+      'users',
+      {'password': newPassword},
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+
+    if (result == 0) {
+      throw Exception("Failed to update password. User ID not found.");
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:moodyapp/UI/mainPage.dart';
 import 'signUp_page.dart';
 import 'welcome.dart';
 import '../DL/UserDB.dart'; // Import the UserDatabase class
@@ -36,10 +37,13 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (isValid) {
         await _showMessage('Success', 'Welcome to MOODY!');
+        int? userIndex = await UserDatabase.instance.getUserIndex(username);
         // Navigate to the welcome page or home page
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Welcome()),
+          MaterialPageRoute(
+            builder: (context) => Mainpage(userIndex: userIndex!),
+          ),
         );
       } else {
         await _showMessage('Error', 'Incorrect password');

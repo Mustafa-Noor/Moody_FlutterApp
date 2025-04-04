@@ -92,7 +92,6 @@ class _MoodLogScreenState extends State<MoodLogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Mood Log")),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _moodsFuture,
         builder: (context, snapshot) {

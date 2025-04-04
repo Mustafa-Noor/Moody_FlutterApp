@@ -88,11 +88,6 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black87,
-      appBar: AppBar(
-        title: const Text("Mood Count"),
-        backgroundColor: Colors.black87,
-        toolbarHeight: 70,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
