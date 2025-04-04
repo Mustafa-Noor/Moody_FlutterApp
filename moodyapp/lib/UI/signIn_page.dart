@@ -2,8 +2,71 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'signUp_page.dart';
 import 'welcome.dart';
+import '../DL/UserDB.dart'; // Import the UserDatabase class
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> _login() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      String username = _usernameController.text;
+      String password = _passwordController.text;
+
+      // Check if the username exists
+      bool usernameExists = await UserDatabase.instance.doesUsernameExist(
+        username,
+      );
+      if (!usernameExists) {
+        await _showMessage('Error', 'User does not exist');
+        return;
+      }
+
+      // Check if the username and password match
+      bool isValid = await UserDatabase.instance.checkUsernameAndPassword(
+        username,
+        password,
+      );
+      if (isValid) {
+        await _showMessage('Success', 'Welcome to MOODY!');
+        // Navigate to the welcome page or home page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Welcome()),
+        );
+      } else {
+        await _showMessage('Error', 'Incorrect password');
+      }
+    }
+  }
+
+  Future<void> _showMessage(String type, String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(type),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,11 +112,33 @@ class LoginPage extends StatelessWidget {
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Column(
-                      children: <Widget>[
-                        inputFile(label: "Email", labelColor: Colors.white),
-                        inputFile(label: "Password", obscureText: true),
-                      ],
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: <Widget>[
+                          inputFile(
+                            label: "Username",
+                            controller: _usernameController,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your username';
+                              }
+                              return null;
+                            },
+                          ),
+                          inputFile(
+                            label: "Password",
+                            controller: _passwordController,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Padding(
@@ -72,7 +157,7 @@ class LoginPage extends StatelessWidget {
                       child: MaterialButton(
                         minWidth: double.infinity,
                         height: 60,
-                        onPressed: () {},
+                        onPressed: _login, // Call the login method
                         color: Colors.deepPurple,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -89,7 +174,6 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -108,25 +192,12 @@ class LoginPage extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 18,
-                            color:
-                                Colors
-                                    .white, // Optional: Set the color to indicate it's clickable
+                            color: Colors.white,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  // Container(
-                  //   padding: EdgeInsets.only(top: 100),
-                  //   height: 200,
-                  //   decoration: BoxDecoration(
-                  //     image: DecorationImage(
-                  //       image: AssetImage("images/sigin.avif"),
-                  //       fit: BoxFit.fitHeight,
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               ),
             ),
@@ -137,8 +208,13 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// we will be creating a widget for text field
-Widget inputFile({label, labelColor = Colors.grey, obscureText = false}) {
+// Updated inputFile widget to accept a controller and validator
+Widget inputFile({
+  required String label,
+  required TextEditingController controller,
+  bool obscureText = false,
+  String? Function(String?)? validator,
+}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
@@ -151,8 +227,10 @@ Widget inputFile({label, labelColor = Colors.grey, obscureText = false}) {
         ),
       ),
       SizedBox(height: 5),
-      TextField(
+      TextFormField(
+        controller: controller,
         obscureText: obscureText,
+        validator: validator,
         decoration: InputDecoration(
           contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
           enabledBorder: OutlineInputBorder(

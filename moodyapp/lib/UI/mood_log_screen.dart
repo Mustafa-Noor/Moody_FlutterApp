@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../BL/mood_card.dart';
 import 'mood_entry_dialog.dart';
-import '../DL/LocalDb.dart';
+import '../DL/MoodDB.dart';
 
 class MoodLogScreen extends StatefulWidget {
   const MoodLogScreen({super.key});

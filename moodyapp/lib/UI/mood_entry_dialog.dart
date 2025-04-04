@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../DL/LocalDb.dart';
+import '../DL/MoodDB.dart';
 
 class MoodEntryDialog extends StatefulWidget {
   final Map<String, dynamic>? existingMood; // Existing mood for editing
