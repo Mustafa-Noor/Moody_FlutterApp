@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../DL/MoodDB.dart';
 
 class MoodBarChartPage extends StatefulWidget {
@@ -10,6 +11,9 @@ class MoodBarChartPage extends StatefulWidget {
   @override
   _MoodBarChartPageState createState() => _MoodBarChartPageState();
 }
+
+DateTime? _customStartDate;
+DateTime? _customEndDate;
 
 class _MoodBarChartPageState extends State<MoodBarChartPage> {
   final LocalDatabase _db = LocalDatabase();
@@ -39,6 +43,106 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
     _loadMoodData();
   }
 
+  List<String> getDateRange({required int days}) {
+    final today = DateTime.now();
+    return List.generate(days, (index) {
+      final date = today.subtract(Duration(days: days - index - 1));
+      return DateFormat('yyyy-MM-dd').format(date);
+    });
+  }
+
+  Future<void> _selectCustomDateRange() async {
+    // Ask for Start Date
+    await showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.black87,
+            title: const Text(
+              "Start Date",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              "Please select the starting date",
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                child: const Text(
+                  "OK",
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+    );
+
+    final DateTime? start = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 7)),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark(), // Makes the picker dark themed
+          child: child!,
+        );
+      },
+    );
+
+    if (start == null) return;
+
+    // Ask for End Date
+    await showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.black87,
+            title: const Text(
+              "End Date",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              "Please select the ending date",
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                child: const Text(
+                  "OK",
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+    );
+
+    final DateTime? end = await showDatePicker(
+      context: context,
+      initialDate:
+          start.add(const Duration(days: 7)).isAfter(DateTime.now())
+              ? DateTime.now()
+              : start.add(const Duration(days: 7)),
+      firstDate: start,
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(data: ThemeData.dark(), child: child!);
+      },
+    );
+
+    if (end == null) return;
+
+    setState(() {
+      _customStartDate = start;
+      // Ensure that the end date is adjusted by adding one day (to include the entire last day)
+      _customEndDate = end.add(const Duration(days: 1));
+    });
+
+    _loadMoodData();
+  }
+
   Future<void> _loadMoodData() async {
     List<Map<String, dynamic>> moods = [];
 
@@ -47,15 +151,29 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
       moods = await _db.getLast7DaysMoods(widget.userIndex);
     } else if (_selectedView == "Monthly") {
       moods = await _db.getLast30DaysMoods(widget.userIndex);
+    } else if (_selectedView == "Custom" &&
+        _customStartDate != null &&
+        _customEndDate != null) {
+      moods = await _db.getMoodsInRange(
+        widget.userIndex,
+        _customStartDate!,
+        _customEndDate!,
+      );
     }
 
     List<BarChartGroupData> barGroups = [];
     List<String> dates = [];
 
-    // Generate the X-axis points and bar groups
-    for (int i = 0; i < moods.length; i++) {
-      final mood = moods[i]['mood'];
-      final date = moods[i]['date'].split(' ')[0];
+    final fullDates = getDateRange(days: _selectedView == "Weekly" ? 7 : 30);
+
+    for (int i = 0; i < fullDates.length; i++) {
+      final date = fullDates[i];
+      final moodEntry = moods.firstWhere(
+        (e) => e['date'].startsWith(date),
+        orElse: () => {'mood': 'No Data'},
+      );
+
+      final mood = moodEntry['mood'];
       final moodValue = _moodMap[mood] ?? 0;
       final moodColor = _moodColors[mood] ?? Colors.grey;
 
@@ -66,7 +184,10 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
             BarChartRodData(
               toY: moodValue.toDouble(),
               color: moodColor,
-              width: 15,
+              width:
+                  _selectedView == "Weekly"
+                      ? 12
+                      : 5, // Thinner bars for Monthly and Custom
               borderRadius: BorderRadius.circular(5),
             ),
           ],
@@ -84,8 +205,13 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
   void _updateView(String view) {
     setState(() {
       _selectedView = view;
-      _loadMoodData(); // Reload data based on the selected view
     });
+
+    if (view == "Custom") {
+      _selectCustomDateRange(); // Show date pickers
+    } else {
+      _loadMoodData(); // Load Weekly or Monthly directly
+    }
   }
 
   @override
@@ -110,7 +236,7 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
                   dropdownColor: Colors.black54,
                   style: const TextStyle(color: Colors.white),
                   items:
-                      ["Weekly", "Monthly"].map((String value) {
+                      ["Weekly", "Monthly", "Custom"].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -166,7 +292,15 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
                               sideTitles: SideTitles(showTitles: false),
                             ),
                           ),
-                          gridData: FlGridData(show: false),
+                          gridData: FlGridData(
+                            show: true,
+                            getDrawingHorizontalLine: (value) {
+                              return FlLine(
+                                color: Colors.grey[800], // light grey lines
+                                strokeWidth: 1,
+                              );
+                            },
+                          ),
                           borderData: FlBorderData(show: false),
                         ),
                       ),
@@ -226,12 +360,35 @@ class _MoodBarChartPageState extends State<MoodBarChartPage> {
   }
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
-    if (value.toInt() >= 0 && value.toInt() < _dates.length) {
-      return Text(
-        _dates[value.toInt()],
-        style: const TextStyle(color: Colors.white70, fontSize: 10),
-      );
+    int index = value.toInt();
+
+    if (index < 0 || index >= _dates.length) return const SizedBox.shrink();
+
+    final date = DateTime.tryParse(_dates[index]);
+    if (date == null) return const SizedBox.shrink();
+
+    // Monthly view: show every 3rd label
+    if (_selectedView == "Monthly" && index % 3 != 0) {
+      return const SizedBox.shrink();
     }
-    return const Text("");
+
+    // Custom view: show only 10 spaced labels
+    if (_selectedView == "Custom") {
+      int total = _dates.length;
+      if (total > 10 && index % (total ~/ 10) != 0) {
+        return const SizedBox.shrink();
+      }
+    }
+
+    // Format: Day + Month (e.g., 02 Apr)
+    String formatted = DateFormat('dd MMM').format(date);
+
+    return Transform.rotate(
+      angle: -0.5, // slight tilt for readability
+      child: Text(
+        formatted,
+        style: const TextStyle(color: Colors.white70, fontSize: 10),
+      ),
+    );
   }
 }

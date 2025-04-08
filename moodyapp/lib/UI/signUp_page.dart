@@ -133,6 +133,9 @@ class _SignupPageState extends State<SignupPage> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a username';
                         }
+                        if (value.contains(' ')) {
+                          return 'Username should not contain spaces';
+                        }
                         return null;
                       },
                     ),

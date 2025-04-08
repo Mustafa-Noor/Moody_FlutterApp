@@ -171,4 +171,32 @@ class LocalDatabase {
       [userIndex],
     );
   }
+
+  Future<List<Map<String, dynamic>>> getMoodsInRange(
+    int userIndex,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // Ensure the database is initialized
+    final db = await database;
+
+    // Format the dates as strings for querying
+    String start =
+        startDate.toIso8601String().split('T')[0]; // Format as yyyy-MM-dd
+    String end =
+        endDate.toIso8601String().split('T')[0]; // Format as yyyy-MM-dd
+
+    try {
+      // Query the database for moods within the date range
+      return await db.query(
+        'moods', // Replace with your table name
+        where: 'userIndex = ? AND date BETWEEN ? AND ?',
+        whereArgs: [userIndex, start, end],
+        orderBy: 'date ASC', // Ensure results are ordered by date
+      );
+    } catch (e) {
+      print("Error fetching moods in range: $e");
+      return []; // Return an empty list if an error occurs
+    }
+  }
 }
