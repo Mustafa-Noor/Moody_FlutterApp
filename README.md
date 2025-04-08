@@ -20,10 +20,10 @@ Moody is an offline-first mobile app built with Flutter to help users track thei
 ## 🖼️ Screenshots
 
 ### 🔐 Sign In Page
-![Sign In](moody/Images/SignInPage.png)
+![Sign In](moodyapp/Images/SignInPage.png)
 
 ### 😃 Mood Logging
-![Mood Log](moody/Images/MoodLogPage.png)
+![Mood Log](moodyapp/Images/MoodLogPage.png)
 
 ### 📈 Mood Charts
-![Mood Chart](moody/Images/MoodCountPage.png)
+![Mood Chart](moodyapp/Images/MoodCountPage.png)
